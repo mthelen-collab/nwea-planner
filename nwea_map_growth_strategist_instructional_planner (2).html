@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NWEA MAP Growth Strategist & Instructional Minutes Calculator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN for interactive visual analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              500: '#4f46e5',
+              600: '#4338ca',
+              700: '#3730a3',
+              800: '#312e81',
+              900: '#1e1b4b',
+            },
+            tealbrand: {
+              500: '#0d9488',
+              600: '#0f766e',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printPlanModal, #printPlanModal * {
+        visibility: visible;
+      }
+      #printPlanModal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    input[type=range]::-webkit-slider-thumb {
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: #4f46e5;
+      cursor: pointer;
+      -webkit-appearance: none;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.4);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-tealbrand-500 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-brand-500/20">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-tight">NWEA MAP Growth Advisor</h1>
+          <p class="text-xs text-slate-500 font-medium">Instructional Minutes &amp; RIT Proficiency Accelerator</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-3">
+        <button id="quickHelpBtn" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center space-x-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="hidden sm:inline">RIT Norms Info</span>
+        </button>
+        <button id="openPrintModalBtn" class="px-3.5 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition-all flex items-center space-x-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          <span>Export Plan</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+    
+    <!-- Hero / Quick Context banner -->
+    <div class="bg-gradient-to-r from-brand-900 via-brand-800 to-indigo-900 text-white rounded-2xl p-5 sm:p-7 shadow-lg relative overflow-hidden">
+      <div class="absolute right-0 top-0 bottom-0 w-1/3 bg-white/5 skew-x-12 pointer-events-none"></div>
+      <div class="relative z-10 max-w-3xl">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/30 text-brand-200 border border-brand-400/30 mb-2.5">
+          NWEA 2025 Normative Reference Framework (v2025.1.1)
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Personalized RIT Target &amp; Instructional Prescriptions</h2>
+        <p class="mt-1.5 text-sm sm:text-base text-brand-100">
+          Enter current student RIT score, target either standard <strong class="text-white">Proficiency (~50th percentile)</strong> or <strong class="text-white">Advanced (~80th-90th percentile)</strong>, and calculate weekly instructional minutes, MTSS Tier allocations, and targeted learning continuum interventions.
+        </p>
+      </div>
+    </div>
+
+    <!-- Layout Grid: Left Inputs, Right Analytics & Strategies -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Input Configuration Form (4 cols) -->
+      <section class="lg:col-span-4 space-y-5">
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-brand-600"></span>
+              <span>Student &amp; Assessment Setup</span>
+            </h3>
+            <button id="resetDefaultsBtn" class="text-xs text-brand-600 hover:text-brand-800 font-semibold transition-colors">Reset</button>
+          </div>
+
+          <!-- Subject Selection -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5" for="subjectSelect">Subject Area</label>
+            <select id="subjectSelect" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none">
+              <option value="math" selected>Mathematics (MAP Growth K-12)</option>
+              <option value="reading">Reading (MAP Growth K-12)</option>
+              <option value="language">Language Usage (MAP Growth 2-11)</option>
+              <option value="science">Science (MAP Growth 2-10)</option>
+            </select>
+          </div>
+
+          <!-- Grade Level Selection -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5" for="gradeSelect">Grade Level</label>
+              <select id="gradeSelect" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none">
+                <option value="0">Kindergarten</option>
+                <option value="1">Grade 1</option>
+                <option value="2">Grade 2</option>
+                <option value="3">Grade 3</option>
+                <option value="4">Grade 4</option>
+                <option value="5" selected>Grade 5</option>
+                <option value="6">Grade 6</option>
+                <option value="7">Grade 7</option>
+                <option value="8">Grade 8</option>
+                <option value="9">Grade 9</option>
+                <option value="10">Grade 10</option>
+                <option value="11">Grade 11</option>
+                <option value="12">Grade 12</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5" for="seasonSelect">Testing Season</label>
+              <select id="seasonSelect" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none">
+                <option value="fall" selected>Fall Benchmark</option>
+                <option value="winter">Winter Check-in</option>
+                <option value="spring">Spring Summative</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Current RIT Score Input & Slider -->
+          <div class="bg-brand-50/50 rounded-xl p-3.5 border border-brand-100 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-brand-900 uppercase tracking-wider" for="ritInput">Current RIT Score</label>
+              <span id="ritValidationLabel" class="text-xs font-medium text-slate-500">Typical: 140–280</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <input type="number" id="ritInput" min="120" max="300" value="204" class="w-24 text-center text-xl font-extrabold text-brand-700 bg-white border border-brand-200 rounded-lg py-1.5 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              <input type="range" id="ritSlider" min="120" max="290" value="204" class="w-full accent-brand-600 bg-slate-200 h-2 rounded-lg cursor-pointer">
+            </div>
+          </div>
+
+          <!-- Target Level Selection (Proficient vs Advanced) -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Target NWEA Achievement Goal</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="targetProficientBtn" class="target-toggle-btn active-goal p-3 rounded-xl border text-left transition-all border-brand-500 bg-brand-50/80 text-brand-900 ring-2 ring-brand-500/20 shadow-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider">Proficient</span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+                </div>
+                <div class="text-sm font-semibold mt-1">~50th Percentile</div>
+                <div class="text-[11px] text-slate-500">Grade-level on track</div>
+              </button>
+
+              <button type="button" id="targetAdvancedBtn" class="target-toggle-btn p-3 rounded-xl border text-left transition-all border-slate-200 hover:border-slate-300 bg-white text-slate-700">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider">Advanced</span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                </div>
+                <div class="text-sm font-semibold mt-1">~80th+ Percentile</div>
+                <div class="text-[11px] text-slate-500">High achievement / GT</div>
+              </button>
+            </div>
+            
+            <div class="mt-2.5">
+              <button type="button" id="targetCustomToggle" class="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center space-x-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                <span>Or specify custom target RIT score</span>
+              </button>
+              <div id="customRitContainer" class="hidden mt-2 flex items-center space-x-2">
+                <input type="number" id="customRitInput" placeholder="Custom RIT" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-800">
+                <button id="applyCustomRit" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold">Apply</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pacing & Scheduling Parameters -->
+          <div class="border-t border-slate-100 pt-3 space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-slate-700 uppercase tracking-wider" for="weeksToTestSlider">Timeline to Next Assessment</label>
+              <span id="weeksLabel" class="text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">12 Weeks</span>
+            </div>
+            <input type="range" id="weeksToTestSlider" min="4" max="24" step="1" value="12" class="w-full accent-brand-600 bg-slate-200 h-1.5 rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-600 font-medium">
+              <span>4 wks (Rapid)</span>
+              <span>12 wks (Standard Term)</span>
+              <span>24 wks (Full Year)</span>
+            </div>
+
+            <div class="mt-2">
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1" for="daysPerWeekSelect">Instructional Days Per Week</label>
+              <select id="daysPerWeekSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-800">
+                <option value="5" selected>5 Days / Week (Daily Schedule)</option>
+                <option value="4">4 Days / Week (Block / 4-Day District)</option>
+                <option value="3">3 Days / Week (Intervention Rotation)</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Quick Summary Mini-Card -->
+        <div class="bg-gradient-to-br from-slate-900 to-brand-950 text-white p-4 rounded-2xl shadow-sm text-xs space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider">Normative Projection</span>
+            <span id="normGroupBadge" class="bg-brand-500/30 text-brand-200 px-2 py-0.5 rounded-full font-mono text-[11px]">Grade 5 Math</span>
+          </div>
+          <div class="text-slate-300 leading-relaxed text-xs">
+            National Fall Grade Mean is <strong id="miniNormMean" class="text-white">209.1 RIT</strong>. High proficiency cut is <strong id="miniNormAdv" class="text-white">223 RIT</strong>.
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Analytics, Minutes, & Actionable Strategies (8 cols) -->
+      <section class="lg:col-span-8 space-y-5">
+        
+        <!-- Score Diagnostic & Gap Metric Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs relative overflow-hidden">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Current Percentile</div>
+            <div class="mt-1 flex items-baseline space-x-1.5">
+              <span id="percentileDisplay" class="text-2xl sm:text-3xl font-black text-slate-900">38th</span>
+              <span class="text-xs font-medium text-slate-600">%ile</span>
+            </div>
+            <div id="tierBadge" class="mt-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">
+              Tier 2 Strategic
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Target RIT Cut</div>
+            <div class="mt-1 flex items-baseline space-x-1.5">
+              <span id="targetRitDisplay" class="text-2xl sm:text-3xl font-black text-brand-600">209</span>
+              <span class="text-xs font-medium text-slate-600">RIT</span>
+            </div>
+            <div id="targetGoalLabel" class="mt-2 text-[11px] font-medium text-slate-500 truncate">
+              Proficient (50th %ile)
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">RIT Point Gap</div>
+            <div class="mt-1 flex items-baseline space-x-1">
+              <span id="ritGapDisplay" class="text-2xl sm:text-3xl font-black text-rose-600">+5</span>
+              <span class="text-xs font-medium text-slate-600">pts</span>
+            </div>
+            <div id="paceNeededLabel" class="mt-2 text-[11px] font-medium text-slate-500">
+              0.4 pts/wk pace
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Target Weekly Mins</div>
+            <div class="mt-1 flex items-baseline space-x-1">
+              <span id="totalWeeklyMinutesDisplay" class="text-2xl sm:text-3xl font-black text-teal-600">180</span>
+              <span class="text-xs font-medium text-slate-600">m/wk</span>
+            </div>
+            <div id="dailyMinsLabel" class="mt-2 text-[11px] font-medium text-teal-700">
+              ~36 min / day
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Chart & Instructional Minutes Breakdown Container -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">Instructional Time &amp; Trajectory Comparison</h3>
+              <p class="text-xs text-slate-500">Visual position on NWEA Norm bell curve alongside required intervention dosage</p>
+            </div>
+            <div class="flex items-center space-x-2 text-xs">
+              <span class="inline-flex items-center space-x-1 text-slate-600">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                <span>Current RIT</span>
+              </span>
+              <span class="inline-flex items-center space-x-1 text-slate-600">
+                <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+                <span>Target RIT</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Chart Area -->
+          <div class="h-44 w-full relative">
+            <canvas id="ritComparisonChart"></canvas>
+          </div>
+
+          <!-- Instructional Minutes Dosage Card -->
+          <div class="mt-3 bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+              <span>Recommended Instructional Minutes Dosage Breakdown</span>
+              <span id="dosageCategoryPill" class="text-[11px] font-semibold text-brand-700 bg-brand-100/70 px-2 py-0.5 rounded-full">MTSS Tier 2 Targeted</span>
+            </h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <!-- Tier 1 Core -->
+              <div class="bg-white p-3 rounded-lg border border-slate-200">
+                <div class="font-bold text-slate-700 flex items-center justify-between">
+                  <span>Tier 1 Core Instruction</span>
+                  <span id="tier1MinsBadge" class="font-mono text-brand-600 font-bold">60 min/d</span>
+                </div>
+                <p class="text-slate-500 mt-1 text-[11px]">Daily grade-level standards exposure, whole group modeling &amp; core curriculum.</p>
+              </div>
+
+              <!-- Tier 2 / Targeted -->
+              <div class="bg-white p-3 rounded-lg border border-slate-200">
+                <div class="font-bold text-slate-700 flex items-center justify-between">
+                  <span id="targetedComponentTitle">Targeted Intervention</span>
+                  <span id="tier2MinsBadge" class="font-mono text-teal-600 font-bold">30 min (3x/wk)</span>
+                </div>
+                <p id="targetedComponentDesc" class="text-slate-500 mt-1 text-[11px]">Skill-deficit small groups, CRA concrete manipulatives, or guided text analysis.</p>
+              </div>
+
+              <!-- Dedicated Practice / Acceleration -->
+              <div class="bg-white p-3 rounded-lg border border-slate-200">
+                <div class="font-bold text-slate-700 flex items-center justify-between">
+                  <span id="practiceComponentTitle">Adaptive &amp; Independent</span>
+                  <span id="adaptiveMinsBadge" class="font-mono text-indigo-600 font-bold">20 min/d</span>
+                </div>
+                <p id="practiceComponentDesc" class="text-slate-500 mt-1 text-[11px]">Digital adaptive pathway (Khan Academy MAP Mappers, Lexia, Dreambox) at ZPD.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actionable Strategies by Subject & RIT Band -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                <span>Targeted Instructional Strategies</span>
+                <span id="strategyBandBadge" class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium">RIT 201-210 Band</span>
+              </h3>
+              <p class="text-xs text-slate-500">High-leverage instructional routines to move the student into the target proficiency tier</p>
+            </div>
+            
+            <!-- Strategy Filter Tabs -->
+            <div class="flex items-center space-x-1 bg-slate-100 p-0.5 rounded-lg text-xs font-semibold text-slate-600">
+              <button id="tabContinuum" class="strategy-tab-btn active-tab px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-xs">Continuum Skills</button>
+              <button id="tabTeacher" class="strategy-tab-btn px-2.5 py-1 rounded-md hover:text-slate-900">Classroom Protocols</button>
+              <button id="tabStudent" class="strategy-tab-btn px-2.5 py-1 rounded-md hover:text-slate-900">Student &amp; Home</button>
+            </div>
+          </div>
+
+          <!-- Tab Content Container -->
+          <div id="strategiesContainer" class="space-y-3">
+            <!-- Dynamically populated via JS -->
+          </div>
+
+          <!-- Interactive Action Item Checklist -->
+          <div class="pt-2 border-t border-slate-100">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Intervention Implementation Checklist</span>
+              <span id="checklistProgress" class="text-[11px] font-medium text-slate-500">0 of 4 Completed</span>
+            </h4>
+            <div id="actionChecklist" class="space-y-2 text-xs">
+              <!-- Dynamically populated checklist items -->
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- Export / Printable Action Plan Modal -->
+  <div id="printPlanModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4 no-print">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">✓</div>
+          <h3 class="font-bold text-slate-900 text-lg">Student NWEA MAP Growth Action Plan</h3>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="copyPlanSummaryBtn" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+            Copy Text
+          </button>
+          <button onclick="window.print()" class="px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            <span>Print PDF</span>
+          </button>
+          <button id="closePrintModalBtn" class="text-slate-400 hover:text-slate-600 p-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Report Sheet Document -->
+      <div id="printableReportContent" class="space-y-6 text-slate-800">
+        <!-- Header details -->
+        <div class="border-b border-slate-200 pb-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">NWEA Growth Prescription &amp; Time Allocation</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Aligned to NWEA MAP Normative Data &amp; MTSS Tier Framework</p>
+            </div>
+            <div class="text-right text-xs text-slate-500">
+              <div>Generated: <span id="reportDate" class="font-medium text-slate-700"></span></div>
+              <div class="font-bold text-brand-600" id="reportSubjectGrade">Grade 5 • Mathematics</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student Performance Profile Table -->
+        <div class="grid grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-500">Current RIT</div>
+            <div class="text-xl font-black text-slate-900 mt-0.5" id="repCurrentRit">204</div>
+            <div class="text-[10px] text-slate-500" id="repPercentile">38th percentile</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-500">Target Level</div>
+            <div class="text-xl font-black text-brand-600 mt-0.5" id="repTargetLevel">Proficient</div>
+            <div class="text-[10px] text-slate-500" id="repTargetRit">Goal: 209 RIT</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-500">Target RIT Gap</div>
+            <div class="text-xl font-black text-rose-600 mt-0.5" id="repGap">+5 pts</div>
+            <div class="text-[10px] text-slate-500" id="repPace">0.4 pts/week</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-500">Total Instructional Time</div>
+            <div class="text-xl font-black text-teal-600 mt-0.5" id="repTotalMins">180 m/wk</div>
+            <div class="text-[10px] text-slate-500" id="repDailyTime">~36 min/day</div>
+          </div>
+        </div>
+
+        <!-- Dosage & Delivery Plan -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">Instructional Minutes Allocation Schedule</h4>
+          <div id="repDosageSchedule" class="text-xs space-y-2"></div>
+        </div>
+
+        <!-- Key Continuum Focus Areas -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">Zone of Proximal Development (ZPD) Focus Skills</h4>
+          <ul id="repSkillFocusList" class="list-disc list-inside text-xs space-y-1.5 text-slate-700"></ul>
+        </div>
+
+        <!-- Key High Leverage Interventions -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">Recommended High-Yield Strategies</h4>
+          <div id="repStrategiesList" class="text-xs space-y-1.5 text-slate-700"></div>
+        </div>
+
+        <!-- Signature Block for IEP / RTI / Parent Signature -->
+        <div class="pt-6 border-t border-slate-200 grid grid-cols-2 gap-8 text-xs text-slate-500">
+          <div class="border-t border-slate-300 pt-1 mt-6">
+            <span>Teacher / Interventionist Signature</span>
+          </div>
+          <div class="border-t border-slate-300 pt-1 mt-6">
+            <span>Parent / Student Signature</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Info Help Modal -->
+  <div id="helpModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-base">About NWEA RIT &amp; Instructional Minutes</h3>
+        <button id="closeHelpModalBtn" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="text-xs text-slate-600 space-y-2.5 leading-relaxed">
+        <p>
+          <strong>What is a RIT score?</strong> The Rasch Unit (RIT) scale is an equal-interval vertical scale that measures student achievement regardless of grade level.
+        </p>
+        <p>
+          <strong>Proficiency Level:</strong> Corresponds approximately to the 50th percentile (national grade-level norm) or state proficiency cut scores.
+        </p>
+        <p>
+          <strong>Advanced Level:</strong> Corresponds to the 80th-90th percentile, indicating readiness for accelerated learning, honors, or gifted/talented coursework.
+        </p>
+        <p>
+          <strong>Instructional Minutes Calibration:</strong> Derived from National Center on Intensive Intervention (NCII) and NWEA growth study norms. Closing a 5–10 RIT gap typically requires 90–150 additional minutes of targeted intervention weekly above core instruction over a 12-week semester.
+        </p>
+      </div>
+      <div class="text-right">
+        <button id="closeHelpModalBtn2" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xl transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-2">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    <span id="toastMessage">Action completed</span>
+  </div>
+
+  <script>
+    // Official 2025 NWEA MAP Growth Student Achievement Norms (Table A.1, A.3, A.5, A.7)
+    const NWEA_NORMS = {
+      math: {
+        0: { fall: { mean: 141.17, sd: 12.29 }, winter: { mean: 150.65, sd: 12.57 }, spring: { mean: 157.77, sd: 13.04 } },
+        1: { fall: { mean: 159.29, sd: 13.40 }, winter: { mean: 168.26, sd: 13.83 }, spring: { mean: 174.99, sd: 14.32 } },
+        2: { fall: { mean: 172.87, sd: 15.44 }, winter: { mean: 181.20, sd: 15.70 }, spring: { mean: 187.46, sd: 16.07 } },
+        3: { fall: { mean: 184.05, sd: 15.54 }, winter: { mean: 192.65, sd: 16.34 }, spring: { mean: 199.10, sd: 17.03 } },
+        4: { fall: { mean: 197.03, sd: 15.91 }, winter: { mean: 204.48, sd: 17.02 }, spring: { mean: 210.07, sd: 18.04 } },
+        5: { fall: { mean: 206.23, sd: 16.23 }, winter: { mean: 211.82, sd: 17.42 }, spring: { mean: 216.01, sd: 18.44 } },
+        6: { fall: { mean: 210.23, sd: 15.99 }, winter: { mean: 216.00, sd: 17.35 }, spring: { mean: 220.33, sd: 18.47 } },
+        7: { fall: { mean: 217.21, sd: 17.22 }, winter: { mean: 221.00, sd: 18.36 }, spring: { mean: 223.85, sd: 19.29 } },
+        8: { fall: { mean: 222.05, sd: 18.33 }, winter: { mean: 225.95, sd: 19.31 }, spring: { mean: 228.87, sd: 20.16 } },
+        9: { fall: { mean: 224.90, sd: 17.67 }, winter: { mean: 227.14, sd: 19.17 }, spring: { mean: 228.82, sd: 21.08 } },
+        10: { fall: { mean: 226.80, sd: 18.58 }, winter: { mean: 229.40, sd: 20.19 }, spring: { mean: 231.36, sd: 22.23 } },
+        11: { fall: { mean: 229.19, sd: 20.48 }, winter: { mean: 231.36, sd: 21.85 }, spring: { mean: 233.00, sd: 23.16 } },
+        12: { fall: { mean: 228.14, sd: 20.95 }, winter: { mean: 229.85, sd: 21.81 }, spring: { mean: 231.13, sd: 23.28 } }
+      },
+      reading: {
+        0: { fall: { mean: 138.07, sd: 9.36 }, winter: { mean: 146.01, sd: 11.01 }, spring: { mean: 151.96, sd: 12.77 } },
+        1: { fall: { mean: 155.37, sd: 12.85 }, winter: { mean: 162.51, sd: 14.04 }, spring: { mean: 167.87, sd: 15.52 } },
+        2: { fall: { mean: 170.06, sd: 17.13 }, winter: { mean: 176.70, sd: 17.14 }, spring: { mean: 181.68, sd: 17.34 } },
+        3: { fall: { mean: 184.69, sd: 18.30 }, winter: { mean: 189.89, sd: 18.13 }, spring: { mean: 193.79, sd: 18.15 } },
+        4: { fall: { mean: 195.92, sd: 17.99 }, winter: { mean: 199.45, sd: 17.76 }, spring: { mean: 202.09, sd: 17.74 } },
+        5: { fall: { mean: 203.67, sd: 17.45 }, winter: { mean: 206.36, sd: 17.21 }, spring: { mean: 208.37, sd: 17.15 } },
+        6: { fall: { mean: 208.95, sd: 16.84 }, winter: { mean: 210.72, sd: 16.70 }, spring: { mean: 212.04, sd: 16.67 } },
+        7: { fall: { mean: 212.34, sd: 16.74 }, winter: { mean: 213.77, sd: 16.83 }, spring: { mean: 214.83, sd: 17.00 } },
+        8: { fall: { mean: 215.72, sd: 17.03 }, winter: { mean: 216.92, sd: 17.04 }, spring: { mean: 217.82, sd: 17.16 } },
+        9: { fall: { mean: 216.20, sd: 18.10 }, winter: { mean: 216.76, sd: 18.14 }, spring: { mean: 217.17, sd: 18.30 } },
+        10: { fall: { mean: 217.76, sd: 17.98 }, winter: { mean: 218.16, sd: 18.04 }, spring: { mean: 218.46, sd: 18.26 } },
+        11: { fall: { mean: 218.20, sd: 18.14 }, winter: { mean: 217.97, sd: 18.38 }, spring: { mean: 217.80, sd: 18.77 } },
+        12: { fall: { mean: 217.62, sd: 18.87 }, winter: { mean: 216.83, sd: 18.99 }, spring: { mean: 216.23, sd: 19.47 } }
+      },
+      language: {
+        2: { fall: { mean: 170.48, sd: 16.52 }, winter: { mean: 177.57, sd: 16.41 }, spring: { mean: 182.88, sd: 16.62 } },
+        3: { fall: { mean: 184.42, sd: 17.37 }, winter: { mean: 189.58, sd: 17.00 }, spring: { mean: 193.44, sd: 16.93 } },
+        4: { fall: { mean: 194.69, sd: 16.81 }, winter: { mean: 198.45, sd: 16.46 }, spring: { mean: 201.27, sd: 16.26 } },
+        5: { fall: { mean: 201.87, sd: 16.09 }, winter: { mean: 204.79, sd: 15.79 }, spring: { mean: 206.97, sd: 15.67 } },
+        6: { fall: { mean: 206.49, sd: 15.67 }, winter: { mean: 208.57, sd: 15.68 }, spring: { mean: 210.12, sd: 15.78 } },
+        7: { fall: { mean: 210.08, sd: 15.81 }, winter: { mean: 211.77, sd: 15.81 }, spring: { mean: 213.03, sd: 15.88 } },
+        8: { fall: { mean: 213.72, sd: 15.67 }, winter: { mean: 215.33, sd: 15.77 }, spring: { mean: 216.54, sd: 15.93 } },
+        9: { fall: { mean: 213.91, sd: 16.59 }, winter: { mean: 214.85, sd: 16.79 }, spring: { mean: 215.55, sd: 17.04 } },
+        10: { fall: { mean: 215.86, sd: 17.06 }, winter: { mean: 216.74, sd: 17.21 }, spring: { mean: 217.40, sd: 17.44 } },
+        11: { fall: { mean: 217.60, sd: 17.19 }, winter: { mean: 218.07, sd: 17.45 }, spring: { mean: 218.43, sd: 17.80 } }
+      },
+      science: {
+        2: { fall: { mean: 176.22, sd: 13.75 }, winter: { mean: 181.41, sd: 12.96 }, spring: { mean: 185.31, sd: 12.66 } },
+        3: { fall: { mean: 187.24, sd: 13.36 }, winter: { mean: 191.20, sd: 12.96 }, spring: { mean: 194.16, sd: 12.81 } },
+        4: { fall: { mean: 194.88, sd: 12.93 }, winter: { mean: 197.92, sd: 13.02 }, spring: { mean: 200.20, sd: 13.16 } },
+        5: { fall: { mean: 200.92, sd: 13.15 }, winter: { mean: 204.19, sd: 13.46 }, spring: { mean: 206.65, sd: 13.81 } },
+        6: { fall: { mean: 204.05, sd: 13.05 }, winter: { mean: 205.86, sd: 13.32 }, spring: { mean: 207.22, sd: 13.59 } },
+        7: { fall: { mean: 207.18, sd: 13.71 }, winter: { mean: 208.81, sd: 14.04 }, spring: { mean: 210.03, sd: 14.35 } },
+        8: { fall: { mean: 209.66, sd: 14.21 }, winter: { mean: 211.48, sd: 14.64 }, spring: { mean: 212.84, sd: 15.07 } },
+        9: { fall: { mean: 211.76, sd: 12.96 }, winter: { mean: 212.73, sd: 13.64 }, spring: { mean: 213.46, sd: 14.66 } },
+        10: { fall: { mean: 213.21, sd: 13.21 }, winter: { mean: 213.99, sd: 14.07 }, spring: { mean: 214.58, sd: 15.27 } }
+      }
+    };
+
+    // Detailed instructional continuum strategies mapped by subject & RIT band
+    const STRATEGY_DATA = {
+      math: {
+        under180: {
+          continuum: [
+            "Decomposing numbers within 20 using double ten-frames and counters",
+            "Understanding addition as putting together and subtraction as taking apart",
+            "Identifying 2D and 3D shapes by defining attributes rather than color/size",
+            "Representing measurement comparisons directly (longer/shorter) with non-standard units"
+          ],
+          teacher: [
+            "Concrete-Representational-Abstract (CRA) sequencing: 70% time with physical base-10 blocks",
+            "Choral counting by 2s, 5s, and 10s with visual number lines up to 100",
+            "Targeted small-group guided intervention 4x weekly with error correction within 3 seconds"
+          ],
+          student: [
+            "Daily 15-minute subitizing and math fact practice using ten-frame flash activities",
+            "Verbalizing 'counting on' strategies aloud before writing answers",
+            "Math talk prompt: 'I know this because my drawing shows...'"
+          ]
+        },
+        '181-200': {
+          continuum: [
+            "Fluently adding and subtracting within 100 using place value strategies and properties",
+            "Multiplication foundations: arrays, equal groups, and repeated addition",
+            "Representing fractions as equal parts of a whole shape (halves, thirds, fourths)",
+            "Solving one-step word problems involving measurement, time (to nearest 5 mins), and money"
+          ],
+          teacher: [
+            "Use visual bar models (tape diagrams) for additive comparison word problems",
+            "Frequent formative check-ins with whiteboards on multi-digit regrouping algorithms",
+            "Explicit instruction on mathematical vocabulary: 'difference', 'product', 'quotient'"
+          ],
+          student: [
+            "Practice decomposing addends to make friendly tens (e.g. 28 + 15 = 28 + 2 + 13)",
+            "Label units clearly on all drawing representations",
+            "Track weekly multiplication fact fluency mastery (focusing on 2s, 5s, 10s, then 3s, 4s)"
+          ]
+        },
+        '201-215': {
+          continuum: [
+            "Multi-digit multiplication (up to 4 digits by 1 digit, and 2 digits by 2 digits)",
+            "Understanding fraction equivalence, comparison, and addition/subtraction with like denominators",
+            "Classifying two-dimensional figures based on presence or absence of parallel/perpendicular lines",
+            "Calculating area and perimeter of complex rectilinear figures"
+          ],
+          teacher: [
+            "Number Talks emphasizing mental area models and partial products",
+            "Structured fraction strips and number lines to prevent adding numerators AND denominators",
+            "Guided peer problem solving with 3-read protocol: 1) context, 2) quantities, 3) target question"
+          ],
+          student: [
+            "Annotate multi-step word problems: underline given values, circle target question",
+            "Estimate reasonableness of products and quotients BEFORE calculating",
+            "Self-check calculation using reverse operations (multiplication checks division)"
+          ]
+        },
+        '216-230': {
+          continuum: [
+            "Dividing fractions by fractions and connecting ratios to unit rates",
+            "Operations with positive and negative rational numbers on vertical and horizontal lines",
+            "Writing, reading, and evaluating algebraic expressions with variables and exponents",
+            "Solving real-world area, surface area, and volume problems with fractional edge lengths"
+          ],
+          teacher: [
+            "Facilitate high-cognitive-demand tasks (Building Thinking Classrooms vertical non-permanent surfaces)",
+            "Provide contrasting examples of solved algebraic equations showing common student misconceptions",
+            "Integrate coordinate plane transformations with proportional reasoning"
+          ],
+          student: [
+            "Write algebraic justifications for each step taken in an equation solution",
+            "Convert flexibly between fractions, decimals, and percentages in real-world contexts",
+            "Maintain an error analysis log: categorize mistakes into 'computational' vs 'conceptual'"
+          ]
+        },
+        'above230': {
+          continuum: [
+            "Linear functions, systems of equations, and bivariate data modeling",
+            "Applying the Pythagorean theorem in 3D coordinate geometry",
+            "Constructing viable arguments and critiquing reasoning in geometric proofs",
+            "Non-linear functions (quadratic and exponential growth and decay models)"
+          ],
+          teacher: [
+            "Curriculum compacting: pre-assess to eliminate routine drill and substitute advanced problem-solving",
+            "Introduce open-ended modeling tasks requiring parameter estimation and sensitivity analysis",
+            "Scaffold contest-level problems (AMC 8, Math Olympiad style) to deepen theoretical concepts"
+          ],
+          student: [
+            "Design mathematical models for real-world scenarios (e.g. compound interest, population trends)",
+            "Engage in peer-mentoring or seminar-style proof defense sessions",
+            "Explore Python or spreadsheet simulation for statistical analysis"
+          ]
+        }
+      },
+      reading: {
+        under180: {
+          continuum: [
+            "Phonological awareness: isolating, segmenting, and blending phonemes in spoken words",
+            "Decoding regular CVC, CVCe, and common vowel team words with automaticity",
+            "Answering who, what, where questions about key details in read-aloud texts",
+            "Recognizing high-frequency sight words in connected sentences"
+          ],
+          teacher: [
+            "Daily 30-minute systematic synthetic phonics instruction with decodable texts only",
+            "Elkonin sound boxes and finger-tapping for phoneme-grapheme mapping",
+            "Repeated oral reading with immediate corrective feedback on accuracy"
+          ],
+          student: [
+            "Choral and whisper reading practice with decodable books",
+            "Word hunt games finding target vowel patterns in text",
+            "Retell story sequence using 'First, Next, Then, Last' visual cues"
+          ]
+        },
+        '181-200': {
+          continuum: [
+            "Identifying central message, lesson, or moral in fables, folktales, and stories",
+            "Using text features (headings, glossaries, captions) to locate key informational facts",
+            "Determining word meanings using root words, prefixes (un-, re-), and context clues",
+            "Describing the connection between a series of historical events or scientific steps"
+          ],
+          teacher: [
+            "Explicit reciprocal teaching routines: Predicting, Clarifying, Questioning, Summarizing",
+            "Guided close-reading of short complex informational passages with paragraph numbering",
+            "Tier 2 academic vocabulary direct instruction (Marzano 6-step method)"
+          ],
+          student: [
+            "Underline evidence in the text before selecting multiple-choice comprehension responses",
+            "Use graphic organizers (cause-and-effect, sequence flowcharts) while reading",
+            "Reread sentences when meaning breaks down (self-monitoring protocol)"
+          ]
+        },
+        '201-215': {
+          continuum: [
+            "Determining theme or main idea and explaining how it is supported by key details",
+            "Comparing and contrasting point of view between first and third-person narrators",
+            "Interpreting figurative language (similes, metaphors, idioms) in context",
+            "Integrating information from two different texts on the same subject to write or speak"
+          ],
+          teacher: [
+            "Model think-alouds showing how to deduce implicit character motivations",
+            "Paired text analysis comparing authors' craft, tone, and structural choices",
+            "Sentence-combining exercises using subordinating conjunctions (although, since, while)"
+          ],
+          student: [
+            "Use the 'RACES' writing framework (Restate, Answer, Cite, Explain, Summarize)",
+            "Track character transformation and conflict progression across chapters",
+            "Read a minimum of 20 minutes daily across balanced fiction and non-fiction texts"
+          ]
+        },
+        '216-230': {
+          continuum: [
+            "Analyzing how an author develops central ideas through specific claims and counterclaims",
+            "Evaluating argument validity: identifying sound reasoning vs irrelevant evidence",
+            "Tracing how particular words and phrases affect tone and mood in complex literary texts",
+            "Synthesizing multiple conflicting primary and secondary sources"
+          ],
+          teacher: [
+            "Socratic seminar discussions analyzing rhetoric, bias, and underlying assumptions",
+            "Explicit instruction on structural markers: antithesis, irony, parallel construction",
+            "Inquiry-based text sets with challenging grade-level and above-grade-level Lexiles (1050L+)"
+          ],
+          student: [
+            "Annotate texts using marginal notes: question motives, note contradictions, evaluate claims",
+            "Analyze author bias and examine who benefits from the presented perspective",
+            "Maintain vocabulary journal for domain-specific Greco-Latin roots"
+          ]
+        },
+        'above230': {
+          continuum: [
+            "Critiquing subtle nuances in figurative and connotative meanings across world literature",
+            "Analyzing multiple interpretations of a story, drama, or poem across different media",
+            "Synthesizing dense academic and technical texts with abstract conceptual frameworks",
+            "Evaluating foundational historical documents for philosophical principles and rhetorical devices"
+          ],
+          teacher: [
+            "Provide college-level seminar texts (philosophical essays, literary theory, peer-reviewed journals)",
+            "Focus writing feedback on stylistic elegance, precision, and varied syntax",
+            "Coach student-led debates on ambiguous ethical questions derived from literary texts"
+          ],
+          student: [
+            "Conduct independent comparative literature analyses across eras or cultures",
+            "Write critical reviews and analytical essays citing multiple authoritative citations",
+            "Engage in analytical reading of classic and contemporary non-fiction publications"
+          ]
+        }
+      },
+      language: {
+        all: {
+          continuum: [
+            "Producing complex sentence structures with correct punctuation and subordination",
+            "Ensuring subject-verb and pronoun-antecedent agreement across dependent clauses",
+            "Applying conventional capitalization, apostrophes, and comma splices correction",
+            "Revising drafts for clarity, voice, transitions, and precise word choice"
+          ],
+          teacher: [
+            "Daily sentence framing and editing warm-ups targeting high-frequency student errors",
+            "Mentor text imitation: deconstruct author sentence patterns and rewrite with new topics",
+            "Explicit peer revision rubrics focused on transitions and logical sequence"
+          ],
+          student: [
+            "Read drafts aloud backwards (sentence by sentence) to isolate mechanical errors",
+            "Color-code parts of speech or subject/predicates when inspecting complex sentences",
+            "Utilize digital grammar tools critically, questioning recommendations before applying"
+          ]
+        }
+      },
+      science: {
+        all: {
+          continuum: [
+            "Developing and using models to describe phenomena and test systems",
+            "Planning and carrying out investigations: controlling variables and measuring accurately",
+            "Analyzing and interpreting data: reading complex charts, scatter plots, and error bars",
+            "Constructing explanations and designing solutions supported by scientific evidence"
+          ],
+          teacher: [
+            "Implement Claim-Evidence-Reasoning (CER) writing scaffolds in all lab experiments",
+            "Anchor units in observable real-world phenomena rather than abstract definitions",
+            "Engage students in data analysis sprints comparing simulated and empirical data sets"
+          ],
+          student: [
+            "Practice distinguishing correlation from causation in scientific data sets",
+            "Formulate testable hypotheses with clearly identified independent and dependent variables",
+            "Interpret diagrams and flowcharts before reading accompanying explanatory text"
+          ]
+        }
+      }
+    };
+
+    // Application Reactive State
+    const appState = {
+      subject: 'math',
+      grade: 5,
+      season: 'fall',
+      currentRit: 204,
+      targetType: 'proficient', // 'proficient' | 'advanced' | 'custom'
+      customRit: null,
+      weeksToTest: 12,
+      daysPerWeek: 5,
+      activeTab: 'continuum',
+      completedChecklist: new Set()
+    };
+
+    let ritChartInstance = null;
+
+    // DOM Element References
+    const elements = {
+      subjectSelect: document.getElementById('subjectSelect'),
+      gradeSelect: document.getElementById('gradeSelect'),
+      seasonSelect: document.getElementById('seasonSelect'),
+      ritInput: document.getElementById('ritInput'),
+      ritSlider: document.getElementById('ritSlider'),
+      ritValidationLabel: document.getElementById('ritValidationLabel'),
+      targetProficientBtn: document.getElementById('targetProficientBtn'),
+      targetAdvancedBtn: document.getElementById('targetAdvancedBtn'),
+      targetCustomToggle: document.getElementById('targetCustomToggle'),
+      customRitContainer: document.getElementById('customRitContainer'),
+      customRitInput: document.getElementById('customRitInput'),
+      applyCustomRit: document.getElementById('applyCustomRit'),
+      weeksToTestSlider: document.getElementById('weeksToTestSlider'),
+      weeksLabel: document.getElementById('weeksLabel'),
+      daysPerWeekSelect: document.getElementById('daysPerWeekSelect'),
+      resetDefaultsBtn: document.getElementById('resetDefaultsBtn'),
+      
+      // Metric outputs
+      percentileDisplay: document.getElementById('percentileDisplay'),
+      tierBadge: document.getElementById('tierBadge'),
+      targetRitDisplay: document.getElementById('targetRitDisplay'),
+      targetGoalLabel: document.getElementById('targetGoalLabel'),
+      ritGapDisplay: document.getElementById('ritGapDisplay'),
+      paceNeededLabel: document.getElementById('paceNeededLabel'),
+      totalWeeklyMinutesDisplay: document.getElementById('totalWeeklyMinutesDisplay'),
+      dailyMinsLabel: document.getElementById('dailyMinsLabel'),
+      dosageCategoryPill: document.getElementById('dosageCategoryPill'),
+      
+      // Dosage breakdowns
+      tier1MinsBadge: document.getElementById('tier1MinsBadge'),
+      tier2MinsBadge: document.getElementById('tier2MinsBadge'),
+      adaptiveMinsBadge: document.getElementById('adaptiveMinsBadge'),
+      targetedComponentTitle: document.getElementById('targetedComponentTitle'),
+      targetedComponentDesc: document.getElementById('targetedComponentDesc'),
+      practiceComponentTitle: document.getElementById('practiceComponentTitle'),
+      practiceComponentDesc: document.getElementById('practiceComponentDesc'),
+      
+      // Mini card & badge
+      normGroupBadge: document.getElementById('normGroupBadge'),
+      miniNormMean: document.getElementById('miniNormMean'),
+      miniNormAdv: document.getElementById('miniNormAdv'),
+      strategyBandBadge: document.getElementById('strategyBandBadge'),
+      
+      // Tabs & container
+      tabContinuum: document.getElementById('tabContinuum'),
+      tabTeacher: document.getElementById('tabTeacher'),
+      tabStudent: document.getElementById('tabStudent'),
+      strategiesContainer: document.getElementById('strategiesContainer'),
+      actionChecklist: document.getElementById('actionChecklist'),
+      checklistProgress: document.getElementById('checklistProgress'),
+      
+      // Modals
+      openPrintModalBtn: document.getElementById('openPrintModalBtn'),
+      closePrintModalBtn: document.getElementById('closePrintModalBtn'),
+      printPlanModal: document.getElementById('printPlanModal'),
+      copyPlanSummaryBtn: document.getElementById('copyPlanSummaryBtn'),
+      quickHelpBtn: document.getElementById('quickHelpBtn'),
+      helpModal: document.getElementById('helpModal'),
+      closeHelpModalBtn: document.getElementById('closeHelpModalBtn'),
+      closeHelpModalBtn2: document.getElementById('closeHelpModalBtn2'),
+      toastNotification: document.getElementById('toastNotification'),
+      toastMessage: document.getElementById('toastMessage')
+    };
+
+    // Helper: Exact standard normal cumulative distribution Phi(z) per NWEA Technical Manual Eq. 3.6 & 3.7
+    function getPercentile(rit, mean, sd) {
+      if (!sd || sd <= 0) return 50;
+      const z = (rit - mean) / sd;
+      
+      // Standard Gaussian CDF approximation (Abramowitz & Stegun 26.2.17)
+      const t = 1.0 / (1.0 + 0.2316419 * Math.abs(z));
+      const d = 0.3989422804014327 * Math.exp(-0.5 * z * z);
+      const poly = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+      
+      // Cumulative probability P(Z <= z)
+      const cdf = z >= 0 ? (1.0 - poly) : poly;
+      const pct = Math.round(cdf * 100);
+      return Math.min(99, Math.max(1, pct));
+    }
+
+    // Helper: Lookup current Norm object
+    function getNorms(subject, grade, season) {
+      const subjNorms = NWEA_NORMS[subject];
+      if (!subjNorms) return { mean: 200, sd: 15 };
+      const gradeNorms = subjNorms[grade] || subjNorms[Object.keys(subjNorms)[0]];
+      return gradeNorms[season] || { mean: 200, sd: 15 };
+    }
+
+    // Determine target RIT based on selected goal
+    function calculateTargetRit(norm, goalType, customVal) {
+      if (goalType === 'custom' && customVal && !isNaN(customVal)) {
+        return Math.round(customVal);
+      }
+      if (goalType === 'advanced') {
+        // Advanced is roughly 80th-84th percentile (~ mean + 0.88 * SD)
+        return Math.round(norm.mean + (0.95 * norm.sd));
+      }
+      // Proficient is 50th percentile (national mean benchmark)
+      return Math.round(norm.mean);
+    }
+
+    // Calculate MTSS Tier and Recommended Minutes
+    function computeInstructionalDosage(currentRit, targetRit, percentile, weeks, daysPerWeek) {
+      const gap = targetRit - currentRit;
+      let tier = 'Tier 1 Universal';
+      let tierBadgeClass = 'bg-emerald-100 text-emerald-800';
+      let category = 'Tier 1 Core Enrichment';
+      
+      // Minutes breakdown (daily/weekly)
+      let tier1Daily = 60; // Standard Core Block
+      let interventionWeekly = 0;
+      let adaptiveDaily = 15;
+      let targetedTitle = "Targeted Intervention";
+      let targetedDesc = "Differentiated small-group instruction during workshop time.";
+      let practiceTitle = "Adaptive Learning / ZPD";
+      let practiceDesc = "Online adaptive pathway at current readiness level (e.g., MAP Accelerator).";
+
+      if (gap <= 0) {
+        // Student already at or above target
+        if (percentile >= 80) {
+          tier = 'Tier 1 Advanced / Gifted';
+          tierBadgeClass = 'bg-indigo-100 text-indigo-800';
+          category = 'Curriculum Compacting & Extension';
+          tier1Daily = 60;
+          interventionWeekly = 60; // 2x 30min extensions
+          adaptiveDaily = 20;
+          targetedTitle = "Enrichment & Deep Thinking";
+          targetedDesc = "Higher-order problem solving, research projects, and competition-style math/reading.";
+          practiceTitle = "Independent Exploration";
+          practiceDesc = "Advanced passion projects, seminar research, and self-directed investigations.";
+        } else {
+          tier = 'Tier 1 On-Track';
+          tierBadgeClass = 'bg-teal-100 text-teal-800';
+          category = 'Core Maintenance & Growth';
+          tier1Daily = 60;
+          interventionWeekly = 45;
+          adaptiveDaily = 15;
+          targetedTitle = "Targeted Skill Polish";
+          targetedDesc = "Strengthening next-horizon skills and peer-collaborative problem solving.";
+        }
+      } else if (gap <= 5) {
+        // Moderate gap
+        tier = 'Tier 2 Strategic';
+        tierBadgeClass = 'bg-amber-100 text-amber-800';
+        category = 'MTSS Tier 2 Strategic Intervention';
+        interventionWeekly = 90; // 3 sessions x 30 min
+        adaptiveDaily = 20;
+        targetedTitle = "Strategic Guided Groups";
+        targetedDesc = "Targeted 3x weekly small-group lessons addressing specific foundational prerequisite gaps.";
+      } else if (gap <= 10) {
+        // High gap
+        tier = 'Tier 2 Intensive';
+        tierBadgeClass = 'bg-orange-100 text-orange-800';
+        category = 'MTSS Tier 2 High-Dosage';
+        interventionWeekly = 150; // 5 sessions x 30 min or 3 x 50 min
+        adaptiveDaily = 25;
+        targetedTitle = "High-Frequency Guided Small Group";
+        targetedDesc = "Daily systematic direct instruction utilizing CRA model and structured feedback.";
+      } else {
+        // Extreme gap (>10 RIT)
+        tier = 'Tier 3 Intensive';
+        tierBadgeClass = 'bg-rose-100 text-rose-800';
+        category = 'MTSS Tier 3 Comprehensive Tutoring';
+        interventionWeekly = 200; // 40 min daily intensive
+        adaptiveDaily = 30;
+        targetedTitle = "Tier 3 Intensive Tutoring";
+        targetedDesc = "High-dosage 1-on-1 or 1-on-3 intervention with multisensory, explicit foundational curriculum.";
+      }
+
+      // Compute total weekly minutes dedicated to the subject
+      const totalWeeklyMinutes = (tier1Daily * daysPerWeek) + interventionWeekly + (adaptiveDaily * daysPerWeek);
+      const dailyAverage = Math.round(totalWeeklyMinutes / daysPerWeek);
+      const paceNeededPerWeek = weeks > 0 ? (Math.max(0, gap) / weeks).toFixed(1) : 0;
+
+      return {
+        tier,
+        tierBadgeClass,
+        category,
+        gap,
+        paceNeededPerWeek,
+        tier1Daily,
+        interventionWeekly,
+        adaptiveDaily,
+        totalWeeklyMinutes,
+        dailyAverage,
+        targetedTitle,
+        targetedDesc,
+        practiceTitle,
+        practiceDesc
+      };
+    }
+
+    // Determine the strategy bucket based on RIT score and subject
+    function getStrategyBucket(subject, rit) {
+      if (subject === 'language' || subject === 'science') {
+        return STRATEGY_DATA[subject].all;
+      }
+      const data = STRATEGY_DATA[subject] || STRATEGY_DATA.math;
+      if (rit <= 180) return data.under180;
+      if (rit <= 200) return data['181-200'];
+      if (rit <= 215) return data['201-215'];
+      if (rit <= 230) return data['216-230'];
+      return data.above230;
+    }
+
+    function getRitBandLabel(rit) {
+      if (rit <= 180) return "RIT ≤180 Band";
+      if (rit <= 200) return "RIT 181–200 Band";
+      if (rit <= 215) return "RIT 201–215 Band";
+      if (rit <= 230) return "RIT 216–230 Band";
+      return "RIT >230 Advanced Band";
+    }
+
+    // Render strategies inside active tab
+    function renderStrategies(subject, rit, activeTab) {
+      const bucket = getStrategyBucket(subject, rit);
+      elements.strategyBandBadge.textContent = getRitBandLabel(rit);
+      elements.strategiesContainer.innerHTML = '';
+
+      let items = [];
+      let iconColor = 'text-brand-600 bg-brand-50';
+      
+      if (activeTab === 'continuum') {
+        items = bucket.continuum || [];
+        iconColor = 'text-teal-600 bg-teal-50';
+      } else if (activeTab === 'teacher') {
+        items = bucket.teacher || [];
+        iconColor = 'text-brand-600 bg-brand-50';
+      } else {
+        items = bucket.student || [];
+        iconColor = 'text-indigo-600 bg-indigo-50';
+      }
+
+      if (items.length === 0) {
+        elements.strategiesContainer.innerHTML = `<div class="text-xs text-slate-500 py-3 italic">Standard developmental strategies apply for this score profile.</div>`;
+        return;
+      }
+
+      items.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = "flex items-start space-x-3 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 hover:bg-slate-100/70 transition-colors";
+        card.innerHTML = `
+          <div class="mt-0.5 w-6 h-6 rounded-lg ${iconColor} flex-shrink-0 flex items-center justify-center font-bold text-xs">
+            ${index + 1}
+          </div>
+          <div class="text-xs text-slate-700 leading-relaxed font-medium">
+            ${item}
+          </div>
+        `;
+        elements.strategiesContainer.appendChild(card);
+      });
+    }
+
+    // Render interactive checklist
+    function renderChecklist(subject, rit) {
+      const bucket = getStrategyBucket(subject, rit);
+      const defaultTasks = [
+        "Schedule weekly small group intervention block in master calendar",
+        "Set personalized student MAP Growth goal sheet with ZPD skills",
+        "Configure digital adaptive software (Khan MAP Accelerator / Lexia) to target RIT",
+        "Conduct 3-week progress monitoring running record or quick-check quiz"
+      ];
+
+      elements.actionChecklist.innerHTML = '';
+      let completedCount = 0;
+
+      defaultTasks.forEach((task, idx) => {
+        const isDone = appState.completedChecklist.has(idx);
+        if (isDone) completedCount++;
+
+        const label = document.createElement('label');
+        label.className = `flex items-center space-x-2.5 p-2 rounded-lg cursor-pointer transition-colors ${isDone ? 'bg-emerald-50/70 text-slate-500 line-through' : 'hover:bg-slate-100 text-slate-700'}`;
+        label.innerHTML = `
+          <input type="checkbox" data-index="${idx}" ${isDone ? 'checked' : ''} class="checklist-checkbox w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300">
+          <span class="text-xs font-medium select-none">${task}</span>
+        `;
+        elements.actionChecklist.appendChild(label);
+      });
+
+      elements.checklistProgress.textContent = `${completedCount} of ${defaultTasks.length} Completed`;
+
+      // Attach event listeners to checkboxes
+      elements.actionChecklist.querySelectorAll('.checklist-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.dataset.index);
+          if (e.target.checked) {
+            appState.completedChecklist.add(idx);
+          } else {
+            appState.completedChecklist.delete(idx);
+          }
+          renderChecklist(appState.subject, appState.currentRit);
+        });
+      });
+    }
+
+    // Initialize or Update Chart.js Comparison Bar Chart
+    function updateChart(currentRit, targetRit, meanRit, advRit) {
+      const ctx = document.getElementById('ritComparisonChart').getContext('2d');
+
+      const labels = ['Current Score', 'Target Goal', 'Grade 50th %ile', 'Advanced (85th %ile)'];
+      const dataValues = [currentRit, targetRit, meanRit, advRit];
+      const colors = [
+        'rgba(79, 70, 229, 0.85)',   // Indigo current
+        'rgba(13, 148, 136, 0.85)',  // Teal target
+        'rgba(148, 163, 184, 0.65)', // Slate national mean
+        'rgba(99, 102, 241, 0.45)'   // Indigo light advanced
+      ];
+      const borderColors = [
+        '#4338ca',
+        '#0f766e',
+        '#64748b',
+        '#4f46e5'
+      ];
+
+      const minVal = Math.min(...dataValues) - 15;
+      const maxVal = Math.max(...dataValues) + 15;
+
+      if (ritChartInstance) {
+        ritChartInstance.data.datasets[0].data = dataValues;
+        ritChartInstance.options.scales.y.min = Math.max(100, Math.floor(minVal / 10) * 10);
+        ritChartInstance.options.scales.y.max = Math.ceil(maxVal / 10) * 10;
+        ritChartInstance.update();
+      } else {
+        ritChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'RIT Score',
+              data: dataValues,
+              backgroundColor: colors,
+              borderColor: borderColors,
+              borderWidth: 1.5,
+              borderRadius: 8,
+              maxBarThickness: 45
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#1e293b',
+                padding: 10,
+                cornerRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    return ` RIT: ${context.parsed.y} points`;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                min: Math.max(100, Math.floor(minVal / 10) * 10),
+                max: Math.ceil(maxVal / 10) * 10,
+                grid: { color: 'rgba(226, 232, 240, 0.6)' },
+                ticks: {
+                  font: { size: 11, family: 'Inter' },
+                  color: '#64748b'
+                }
+              },
+              x: {
+                grid: { display: false },
+                ticks: {
+                  font: { size: 11, weight: '600', family: 'Inter' },
+                  color: '#334155'
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // Main UI Synchronization Controller
+    function updateUI() {
+      const norm = getNorms(appState.subject, appState.grade, appState.season);
+      const advNormRit = Math.round(norm.mean + (0.95 * norm.sd));
+      const targetRit = calculateTargetRit(norm, appState.targetType, appState.customRit);
+      const percentile = getPercentile(appState.currentRit, norm.mean, norm.sd);
+      
+      const dosage = computeInstructionalDosage(
+        appState.currentRit, 
+        targetRit, 
+        percentile, 
+        appState.weeksToTest, 
+        appState.daysPerWeek
+      );
+
+      // 1. Update mini summary & badges
+      const gradeNames = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'];
+      const subjNames = { math: 'Math', reading: 'Reading', language: 'Language', science: 'Science' };
+      elements.normGroupBadge.textContent = `Grade ${gradeNames[appState.grade]} ${subjNames[appState.subject]}`;
+      elements.miniNormMean.textContent = `${norm.mean.toFixed(1)} RIT`;
+      elements.miniNormAdv.textContent = `${advNormRit} RIT`;
+
+      // 2. Metrics display
+      elements.percentileDisplay.textContent = `${percentile}${getOrdinalSuffix(percentile)}`;
+      elements.tierBadge.textContent = dosage.tier;
+      elements.tierBadge.className = `mt-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${dosage.tierBadgeClass}`;
+
+      elements.targetRitDisplay.textContent = targetRit;
+      elements.targetGoalLabel.textContent = appState.targetType === 'advanced' 
+        ? 'Advanced (~80th-90th %ile)' 
+        : (appState.targetType === 'custom' ? 'Custom Target RIT' : 'Proficient (~50th %ile)');
+
+      const gapSign = dosage.gap > 0 ? `+${dosage.gap}` : (dosage.gap === 0 ? '0' : `${dosage.gap}`);
+      elements.ritGapDisplay.textContent = gapSign;
+      elements.ritGapDisplay.className = `text-2xl sm:text-3xl font-black ${dosage.gap > 0 ? 'text-rose-600' : 'text-emerald-600'}`;
+      elements.paceNeededLabel.textContent = dosage.gap > 0 ? `${dosage.paceNeededPerWeek} pts/wk pace` : 'Goal already met';
+
+      elements.totalWeeklyMinutesDisplay.textContent = dosage.totalWeeklyMinutes;
+      elements.dailyMinsLabel.textContent = `~${dosage.dailyAverage} min / day`;
+      elements.dosageCategoryPill.textContent = dosage.category;
+
+      // 3. Instructional minute components
+      elements.tier1MinsBadge.textContent = `${dosage.tier1Daily} min/d`;
+      elements.tier2MinsBadge.textContent = dosage.interventionWeekly > 0 
+        ? `${dosage.interventionWeekly} min/wk` 
+        : 'On-demand';
+      elements.adaptiveMinsBadge.textContent = `${dosage.adaptiveDaily} min/d`;
+
+      elements.targetedComponentTitle.textContent = dosage.targetedTitle;
+      elements.targetedComponentDesc.textContent = dosage.targetedDesc;
+      elements.practiceComponentTitle.textContent = dosage.practiceTitle;
+      elements.practiceComponentDesc.textContent = dosage.practiceDesc;
+
+      // 4. Update timeline label
+      elements.weeksLabel.textContent = `${appState.weeksToTest} Weeks`;
+
+      // 5. Update Chart
+      updateChart(appState.currentRit, targetRit, Math.round(norm.mean), advNormRit);
+
+      // 6. Update Strategies & Checklist
+      renderStrategies(appState.subject, appState.currentRit, appState.activeTab);
+      renderChecklist(appState.subject, appState.currentRit);
+
+      // 7. Update report modal contents
+      updateReportModalContent(norm, targetRit, percentile, dosage, advNormRit);
+    }
+
+    function getOrdinalSuffix(n) {
+      const s = ["th", "st", "nd", "rd"];
+      const v = n % 100;
+      return (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    // Sync Printable Modal Content
+    function updateReportModalContent(norm, targetRit, percentile, dosage, advNormRit) {
+      const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const subjTitles = { math: 'Mathematics', reading: 'Reading', language: 'Language Usage', science: 'Science' };
+      const gradeNames = ['Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'];
+
+      document.getElementById('reportDate').textContent = dateStr;
+      document.getElementById('reportSubjectGrade').textContent = `${gradeNames[appState.grade]} • ${subjTitles[appState.subject]} (${appState.season.toUpperCase()})`;
+      document.getElementById('repCurrentRit').textContent = appState.currentRit;
+      document.getElementById('repPercentile').textContent = `${percentile}${getOrdinalSuffix(percentile)} percentile`;
+      document.getElementById('repTargetLevel').textContent = appState.targetType.toUpperCase();
+      document.getElementById('repTargetRit').textContent = `Target: ${targetRit} RIT`;
+      document.getElementById('repGap').textContent = dosage.gap > 0 ? `+${dosage.gap} pts` : `${dosage.gap} pts`;
+      document.getElementById('repPace').textContent = dosage.gap > 0 ? `${dosage.paceNeededPerWeek} pts/wk over ${appState.weeksToTest} wks` : 'Target Achieved';
+      document.getElementById('repTotalMins').textContent = `${dosage.totalWeeklyMinutes} m/wk`;
+      document.getElementById('repDailyTime').textContent = `~${dosage.dailyAverage} min/day (${appState.daysPerWeek} d/wk)`;
+
+      // Dosage schedule details
+      const schedContainer = document.getElementById('repDosageSchedule');
+      schedContainer.innerHTML = `
+        <div class="grid grid-cols-3 gap-2 bg-slate-100 p-2.5 rounded-lg font-medium text-slate-700">
+          <div><strong>Tier 1 Core:</strong> ${dosage.tier1Daily} min daily</div>
+          <div><strong>Targeted Intervention:</strong> ${dosage.interventionWeekly} min / week</div>
+          <div><strong>Adaptive Software:</strong> ${dosage.adaptiveDaily} min daily</div>
+        </div>
+      `;
+
+      // Skill focus list
+      const bucket = getStrategyBucket(appState.subject, appState.currentRit);
+      const skillList = document.getElementById('repSkillFocusList');
+      skillList.innerHTML = '';
+      (bucket.continuum || []).forEach(skill => {
+        const li = document.createElement('li');
+        li.textContent = skill;
+        skillList.appendChild(li);
+      });
+
+      // Strategy list
+      const stratContainer = document.getElementById('repStrategiesList');
+      stratContainer.innerHTML = '';
+      const comboStrats = [...(bucket.teacher || []), ...(bucket.student || [])].slice(0, 4);
+      comboStrats.forEach((str, i) => {
+        const p = document.createElement('div');
+        p.className = 'flex items-start space-x-2';
+        p.innerHTML = `<span class="font-bold text-slate-900">•</span><span>${str}</span>`;
+        stratContainer.appendChild(p);
+      });
+    }
+
+    // Helper toast notification
+    function showToast(message) {
+      elements.toastMessage.textContent = message;
+      elements.toastNotification.classList.remove('translate-y-16', 'opacity-0');
+      elements.toastNotification.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        elements.toastNotification.classList.remove('translate-y-0', 'opacity-100');
+        elements.toastNotification.classList.add('translate-y-16', 'opacity-0');
+      }, 2500);
+    }
+
+    // Event Listeners for Controls
+    elements.subjectSelect.addEventListener('change', (e) => {
+      appState.subject = e.target.value;
+      // Adjust grade availability for language (2-11) and science (2-10) per 2025 norms manual
+      if (appState.subject === 'language' && (appState.grade < 2 || appState.grade > 11)) {
+        appState.grade = Math.min(11, Math.max(2, appState.grade));
+      }
+      if (appState.subject === 'science' && (appState.grade < 2 || appState.grade > 10)) {
+        appState.grade = Math.min(10, Math.max(2, appState.grade));
+      }
+      elements.gradeSelect.value = appState.grade;
+      updateUI();
+    });
+
+    elements.gradeSelect.addEventListener('change', (e) => {
+      appState.grade = parseInt(e.target.value);
+      // Validate subject minimums & maximums per 2025 norm tables
+      if ((appState.grade < 2 || appState.grade > 11) && appState.subject === 'language') appState.subject = 'math';
+      if ((appState.grade < 2 || appState.grade > 10) && appState.subject === 'science') appState.subject = 'math';
+      elements.subjectSelect.value = appState.subject;
+      updateUI();
+    });
+
+    elements.seasonSelect.addEventListener('change', (e) => {
+      appState.season = e.target.value;
+      updateUI();
+    });
+
+    // Sync input number and range slider
+    elements.ritSlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      appState.currentRit = val;
+      elements.ritInput.value = val;
+      updateUI();
+    });
+
+    elements.ritInput.addEventListener('input', (e) => {
+      let val = parseInt(e.target.value);
+      if (isNaN(val)) return;
+      if (val < 120) val = 120;
+      if (val > 300) val = 300;
+      appState.currentRit = val;
+      elements.ritSlider.value = val;
+      updateUI();
+    });
+
+    // Target Selection Buttons
+    function setTargetMode(mode) {
+      appState.targetType = mode;
+      elements.targetProficientBtn.classList.toggle('border-brand-500', mode === 'proficient');
+      elements.targetProficientBtn.classList.toggle('bg-brand-50/80', mode === 'proficient');
+      elements.targetProficientBtn.classList.toggle('ring-2', mode === 'proficient');
+      elements.targetProficientBtn.classList.toggle('ring-brand-500/20', mode === 'proficient');
+
+      elements.targetAdvancedBtn.classList.toggle('border-brand-500', mode === 'advanced');
+      elements.targetAdvancedBtn.classList.toggle('bg-brand-50/80', mode === 'advanced');
+      elements.targetAdvancedBtn.classList.toggle('ring-2', mode === 'advanced');
+      elements.targetAdvancedBtn.classList.toggle('ring-brand-500/20', mode === 'advanced');
+
+      if (mode !== 'custom') {
+        elements.customRitContainer.classList.add('hidden');
+      }
+      updateUI();
+    }
+
+    elements.targetProficientBtn.addEventListener('click', () => setTargetMode('proficient'));
+    elements.targetAdvancedBtn.addEventListener('click', () => setTargetMode('advanced'));
+
+    elements.targetCustomToggle.addEventListener('click', () => {
+      elements.customRitContainer.classList.toggle('hidden');
+      if (!elements.customRitContainer.classList.contains('hidden')) {
+        elements.customRitInput.focus();
+      }
+    });
+
+    elements.applyCustomRit.addEventListener('click', () => {
+      const customVal = parseInt(elements.customRitInput.value);
+      if (!isNaN(customVal) && customVal >= 120 && customVal <= 310) {
+        appState.customRit = customVal;
+        setTargetMode('custom');
+        showToast(`Target RIT set to ${customVal}`);
+      } else {
+        showToast('Please enter a valid RIT between 120 and 310');
+      }
+    });
+
+    // Pacing sliders
+    elements.weeksToTestSlider.addEventListener('input', (e) => {
+      appState.weeksToTest = parseInt(e.target.value);
+      updateUI();
+    });
+
+    elements.daysPerWeekSelect.addEventListener('change', (e) => {
+      appState.daysPerWeek = parseInt(e.target.value);
+      updateUI();
+    });
+
+    // Tabs for Strategies
+    function setStrategyTab(tab) {
+      appState.activeTab = tab;
+      [elements.tabContinuum, elements.tabTeacher, elements.tabStudent].forEach(b => {
+        b.classList.remove('active-tab', 'bg-white', 'text-slate-900', 'shadow-xs');
+        b.classList.add('hover:text-slate-900');
+      });
+      if (tab === 'continuum') {
+        elements.tabContinuum.classList.add('active-tab', 'bg-white', 'text-slate-900', 'shadow-xs');
+      } else if (tab === 'teacher') {
+        elements.tabTeacher.classList.add('active-tab', 'bg-white', 'text-slate-900', 'shadow-xs');
+      } else {
+        elements.tabStudent.classList.add('active-tab', 'bg-white', 'text-slate-900', 'shadow-xs');
+      }
+      renderStrategies(appState.subject, appState.currentRit, appState.activeTab);
+    }
+
+    elements.tabContinuum.addEventListener('click', () => setStrategyTab('continuum'));
+    elements.tabTeacher.addEventListener('click', () => setStrategyTab('teacher'));
+    elements.tabStudent.addEventListener('click', () => setStrategyTab('student'));
+
+    // Reset Defaults
+    elements.resetDefaultsBtn.addEventListener('click', () => {
+      appState.subject = 'math';
+      appState.grade = 5;
+      appState.season = 'fall';
+      appState.currentRit = 204;
+      appState.targetType = 'proficient';
+      appState.weeksToTest = 12;
+      appState.daysPerWeek = 5;
+      appState.completedChecklist.clear();
+      
+      elements.subjectSelect.value = 'math';
+      elements.gradeSelect.value = 5;
+      elements.seasonSelect.value = 'fall';
+      elements.ritInput.value = 204;
+      elements.ritSlider.value = 204;
+      elements.weeksToTestSlider.value = 12;
+      elements.daysPerWeekSelect.value = 5;
+      setTargetMode('proficient');
+      showToast('Settings reset to Grade 5 Math defaults');
+    });
+
+    // Modal Triggers
+    elements.openPrintModalBtn.addEventListener('click', () => {
+      elements.printPlanModal.classList.remove('hidden');
+    });
+    elements.closePrintModalBtn.addEventListener('click', () => {
+      elements.printPlanModal.classList.add('hidden');
+    });
+    elements.quickHelpBtn.addEventListener('click', () => {
+      elements.helpModal.classList.remove('hidden');
+    });
+    elements.closeHelpModalBtn.addEventListener('click', () => {
+      elements.helpModal.classList.add('hidden');
+    });
+    elements.closeHelpModalBtn2.addEventListener('click', () => {
+      elements.helpModal.classList.add('hidden');
+    });
+
+    // Copy Summary to Clipboard
+    elements.copyPlanSummaryBtn.addEventListener('click', () => {
+      const content = document.getElementById('printableReportContent').innerText;
+      const tempArea = document.createElement('textarea');
+      tempArea.value = content;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('Growth plan copied to clipboard!');
+      } catch (err) {
+        showToast('Could not copy to clipboard');
+      }
+      document.body.removeChild(tempArea);
+    });
+
+    // Initial boot on load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateUI();
+    });
+  </script>
+</body>
+</html>
